@@ -42,14 +42,29 @@ async def daily_brief_job():
                 vitality_index,
             )
 
-            # 活力指数 < 40 触发推送（占位，Phase 7 实现）
+            # 活力指数 < 40 触发推送
             if vitality_index is not None and vitality_index < 40:
                 logger.info(
-                    "患者 %s 活力指数 %d < 40，待触发推送通知",
+                    "患者 %s 活力指数 %d < 40，触发推送通知",
                     patient.id,
                     vitality_index,
                 )
-                # TODO: Phase 7 — 调用推送服务通知所有绑定家属
+                from app.core.push_service import send_vitality_alert
+
+                try:
+                    sent = await send_vitality_alert(patient.id, vitality_index, db)
+                    logger.info(
+                        "患者 %s 预警推送完成: 成功发送 %d 条",
+                        patient.id,
+                        sent,
+                    )
+                except Exception as push_e:
+                    logger.error(
+                        "患者 %s 预警推送失败: %s",
+                        patient.id,
+                        push_e,
+                        exc_info=True,
+                    )
 
         except Exception as e:
             logger.error(
