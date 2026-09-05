@@ -3,7 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.router import router as v1_router
+from app.api.v1.health import router as health_router
+from app.api.v1.bindings import router as binding_router
+from app.api.v1.consents import router as consent_router
+from app.api.v1.patient_config import router as config_router
+from app.api.v1.chat import router as chat_router
+from app.api.v1.photos import router as photos_router
+from app.api.v1.devices import router as devices_router
 from app.core.minio_client import ensure_buckets
 
 
@@ -39,8 +45,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount v1 routes
-app.include_router(v1_router, prefix="/api/v1")
+# Mount all v1 routes
+app.include_router(health_router, prefix="/api/v1")
+app.include_router(binding_router, prefix="/api/v1")
+app.include_router(consent_router, prefix="/api/v1")
+app.include_router(config_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
+app.include_router(photos_router, prefix="/api/v1")
+app.include_router(devices_router, prefix="/api/v1")
 
 
 # Root health check
