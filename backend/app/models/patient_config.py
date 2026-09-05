@@ -34,6 +34,10 @@ class PatientConfig(Base):
     privacy_consent: Mapped[dict | None] = mapped_column(
         JSON, nullable=True
     )
+    soothing_config: Mapped[dict | None] = mapped_column(
+        JSON, nullable=True, default=None,
+        comment="舒缓模式配置 {sunset_start, sunset_end, auto_soothing}",
+    )
     created_at: Mapped[datetime] = mapped_column(
         sa.TIMESTAMP(timezone=True), server_default=sa.func.now()
     )

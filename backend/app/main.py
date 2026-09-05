@@ -65,6 +65,7 @@ app.include_router(config_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(photos_router, prefix="/api/v1")
 app.include_router(devices_router, prefix="/api/v1")
+app.include_router(push_router, prefix="/api/v1")
 
 
 # Root health check
