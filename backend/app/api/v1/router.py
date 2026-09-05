@@ -10,6 +10,7 @@ from app.api.v1.health import router as health_router
 from app.api.v1.memories import router as memories_router
 from app.api.v1.patient_config import router as config_router
 from app.api.v1.photos import router as photos_router
+from app.api.v1.push import router as push_router
 
 router = APIRouter()
 
@@ -24,3 +25,4 @@ router.include_router(devices_router)
 router.include_router(biometrics_router)
 router.include_router(briefs_router)
 router.include_router(memories_router)
+router.include_router(push_router)
