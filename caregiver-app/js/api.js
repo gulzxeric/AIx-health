@@ -7,7 +7,7 @@
   'use strict';
 
   const BASE = 'http://127.0.0.1:8000/api/v1';
-  const PATIENT_ID = '550e8400-e29b-41d4-a716-446655440001';
+  const PATIENT_ID = '58b203df-5424-4f53-b155-82b34f840213'; // 测试患者
 
   async function _fetch(path, options) {
     const url = BASE + path;
