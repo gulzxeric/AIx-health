@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
@@ -9,6 +10,7 @@ from app.core.chat_engine import chat_engine
 from app.core.tts_service import synthesize_speech
 from app.database import get_db
 from app.models.chat_session import ChatSession
+from app.models.persona import Persona
 from app.schemas.chat import (
     ChatMessageRequest,
     ChatMessageResponse,
@@ -19,6 +21,11 @@ from app.schemas.chat import (
 )
 
 router = APIRouter(prefix="/chat", tags=["对话引擎"])
+
+
+async def _get_persona(db: AsyncSession, persona_id: UUID) -> Persona | None:
+    result = await db.execute(select(Persona).where(Persona.id == persona_id))
+    return result.scalar_one_or_none()
 
 
 @router.post("/session/start", response_model=SessionStartResponse)
@@ -57,13 +64,11 @@ async def chat_message(
     """发送对话消息，返回数字人回复
 
     1. 检索相关记忆
-    2. 检索当前轮播照片上下文
-    3. 构造 LLM prompt（老街坊角色）
-    4. 调用 LLM 生成回复
-    5. TTS 合成语音（占位）
-    6. 更新 session 消息计数
+    2. photo_id 命中照片亲人 -> 以该人物身份回话
+    3. LLM 生成回复
+    4. TTS 合成（克隆音/默认音，失败静默降级）
+    5. 更新 session 消息计数
     """
-    # 验证 session 存在且 active
     stmt = select(ChatSession).where(ChatSession.id == req.session_id)
     result = await db.execute(stmt)
     session = result.scalar_one_or_none()
@@ -76,17 +81,35 @@ async def chat_message(
             voice_source="default",
         )
 
-    # 生成回复
     reply = await chat_engine.generate_reply(
         patient_id=session.patient_id,
         asr_text=req.asr_text,
         photo_context=req.photo_context,
+        photo_id=req.photo_id,
     )
 
-    # TTS 合成
-    audio_url = await synthesize_speech(reply["reply_text"], language="zh-CN")
+    # TTS 音色：照片亲人已克隆 -> 克隆音；否则默认音（失败 None 不阻断）
+    audio_url = None
+    if reply.get("voice_source") == "cloned" and reply.get("persona_id"):
+        persona_row = await _get_persona(db, reply["persona_id"])
+        if persona_row is not None and persona_row.voice_sample_url:
+            cfg = persona_row.voice_clone_cfg or {}
+            audio_url = await synthesize_speech(
+                reply["reply_text"],
+                language="zh-CN",
+                patient_id=session.patient_id,
+                voice="persona",
+                persona_id=persona_row.id,
+                ref_audio_url=persona_row.voice_sample_url,
+                ref_text=cfg.get("prompt_text"),
+            )
+    if audio_url is None:
+        audio_url = await synthesize_speech(
+            reply["reply_text"],
+            language="zh-CN",
+            patient_id=session.patient_id,
+        )
 
-    # 更新 session 消息计数
     session.message_count += 1
     await db.commit()
 

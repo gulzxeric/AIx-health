@@ -17,6 +17,7 @@ class ChatMessageRequest(BaseModel):
     session_id: UUID
     asr_text: str
     photo_context: str | None = None
+    photo_id: UUID | None = None  # 当前轮播照片（有人物标注时触发照片亲人模式）
 
 
 class ChatMessageResponse(BaseModel):
