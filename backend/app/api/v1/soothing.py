@@ -37,7 +37,7 @@ async def report_soothing_event(
         patient_id=req.patient_id,
         event_type=req.event_type,
         session_id=req.session_id,
-        metadata=req.metadata or {},
+        event_metadata=req.metadata or {},
     )
     db.add(event)
     await db.commit()

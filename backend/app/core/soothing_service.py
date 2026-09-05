@@ -3,7 +3,6 @@ from datetime import datetime, time, timezone
 
 from sqlalchemy import select
 
-from app.database import async_session_factory
 from app.models.patient_config import PatientConfig
 
 

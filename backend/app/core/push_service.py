@@ -177,11 +177,7 @@ async def send_push_notification(
 
 async def _send_via_httpx(sub_info: dict, payload: str) -> bool:
     """使用 httpx 模拟 Web Push 发送（降级方案）"""
-    import base64
-
     import httpx
-    from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric import ec
 
     endpoint = sub_info["endpoint"]
 
@@ -307,7 +303,7 @@ async def broadcast_to_patient(
     if db is not None:
         return await _do_broadcast(db)
     else:
-        async with async_session_factory() session:
+        async with async_session_factory() as session:
             return await _do_broadcast(session)
 
 

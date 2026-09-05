@@ -28,7 +28,7 @@ class SoothingEvent(Base):
         sa.UUID, nullable=True,
         comment="关联的对话 session ID",
     )
-    metadata: Mapped[dict] = mapped_column(
+    event_metadata: Mapped[dict] = mapped_column(
         JSON, default={}, nullable=False,
         comment="附带元数据",
     )
