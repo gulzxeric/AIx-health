@@ -8,12 +8,33 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.photo import Photo
 from app.schemas.photo import PhotoResponse
-from app.core.minio_service import upload_photo
+from app.core.minio_service import get_presigned_url, upload_photo
 from app.core.face_comparison import detect_and_extract, match_persona, auto_label_photo
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/photos", tags=["照片"])
+
+
+async def _photo_response(p: Photo) -> PhotoResponse:
+    """构造照片响应；MinIO 对象路径签名成浏览器可加载的 presigned URL。"""
+    object_url = p.object_url
+    thumbnail_url = p.thumbnail_url
+    try:
+        if object_url and object_url.startswith("/"):
+            object_url = await get_presigned_url(object_url, expires=3600)
+        if thumbnail_url and thumbnail_url.startswith("/"):
+            thumbnail_url = await get_presigned_url(thumbnail_url, expires=3600)
+    except Exception as e:
+        logger.warning("照片 URL 签名失败，返回原路径: %s, %s", p.object_url, e)
+    return PhotoResponse(
+        id=p.id,
+        object_url=object_url,
+        thumbnail_url=thumbnail_url,
+        persona_name=p.persona_name,
+        persona_relation=p.persona_relation,
+        created_at=p.created_at,
+    )
 
 
 @router.post("", response_model=PhotoResponse)
@@ -80,14 +101,7 @@ async def upload_photo_endpoint(
         new_photo.id, patient_id, detected_persona_name,
     )
 
-    return PhotoResponse(
-        id=new_photo.id,
-        object_url=new_photo.object_url,
-        thumbnail_url=new_photo.thumbnail_url,
-        persona_name=new_photo.persona_name,
-        persona_relation=new_photo.persona_relation,
-        created_at=new_photo.created_at,
-    )
+    return await _photo_response(new_photo)
 
 
 @router.get("", response_model=list[PhotoResponse])
@@ -107,14 +121,4 @@ async def get_photos(
     result = await db.execute(stmt)
     photos = list(result.scalars().all())
 
-    return [
-        PhotoResponse(
-            id=p.id,
-            object_url=p.object_url,
-            thumbnail_url=p.thumbnail_url,
-            persona_name=p.persona_name,
-            persona_relation=p.persona_relation,
-            created_at=p.created_at,
-        )
-        for p in photos
-    ]
+    return [await _photo_response(p) for p in photos]

@@ -19,7 +19,7 @@ from app.schemas.memory import (
 from app.core.asr_service import speech_to_text
 from app.core.face_service import detect_faces, compare_faces
 from app.core.llm_pipeline import describe_image, extract_entities, generate_embedding
-from app.core.minio_service import upload_photo
+from app.core.minio_service import get_presigned_url, upload_photo
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,25 @@ def _decode_data_url(data_url: str) -> tuple[bytes, str, str] | None:
     except Exception as e:
         logger.error("data URL 解析失败: %s", e)
         return None
+
+
+async def _memory_response(m: Memory) -> MemoryResponse:
+    """构造记忆响应；photo_url 为 MinIO 对象路径时签名成浏览器可加载的 presigned URL。"""
+    photo_url = m.photo_url
+    if photo_url and photo_url.startswith("/"):
+        try:
+            photo_url = await get_presigned_url(photo_url, expires=3600)
+        except Exception as e:
+            logger.warning("照片 URL 签名失败，返回原路径: %s, %s", m.photo_url, e)
+    return MemoryResponse(
+        id=m.id,
+        raw_text=m.raw_text,
+        entities=m.entities,
+        photo_url=photo_url,
+        sync_status=m.sync_status,
+        created_at=m.created_at,
+        updated_at=m.updated_at,
+    )
 
 
 @router.post("", response_model=MemoryResponse)
@@ -124,15 +143,7 @@ async def create_memory(
     logger.info("记忆已创建: id=%s, patient_id=%s", memory.id, patient_id)
 
     # Step 6: 返回记忆卡片
-    return MemoryResponse(
-        id=memory.id,
-        raw_text=memory.raw_text,
-        entities=memory.entities,
-        photo_url=memory.photo_url,
-        sync_status=memory.sync_status,
-        created_at=memory.created_at,
-        updated_at=memory.updated_at,
-    )
+    return await _memory_response(memory)
 
 
 @router.get("", response_model=MemoryListResponse)
@@ -170,18 +181,7 @@ async def list_memories(
     memories = list(result.scalars().all())
 
     return MemoryListResponse(
-        memories=[
-            MemoryResponse(
-                id=m.id,
-                raw_text=m.raw_text,
-                entities=m.entities,
-                photo_url=m.photo_url,
-                sync_status=m.sync_status,
-                created_at=m.created_at,
-                updated_at=m.updated_at,
-            )
-            for m in memories
-        ],
+        memories=[await _memory_response(m) for m in memories],
         total=total,
     )
 
@@ -205,15 +205,7 @@ async def update_memory(
     await db.commit()
     await db.refresh(memory)
 
-    return MemoryResponse(
-        id=memory.id,
-        raw_text=memory.raw_text,
-        entities=memory.entities,
-        photo_url=memory.photo_url,
-        sync_status=memory.sync_status,
-        created_at=memory.created_at,
-        updated_at=memory.updated_at,
-    )
+    return await _memory_response(memory)
 
 
 @router.delete("/{memory_id}")
