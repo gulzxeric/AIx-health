@@ -18,6 +18,7 @@ from app.api.v1.biometrics import router as biometrics_router
 from app.api.v1.briefs import router as briefs_router
 from app.api.v1.soothing import router as soothing_router
 from app.api.v1.push import router as push_router
+from app.api.v1.audio import router as audio_router
 from app.core.minio_client import ensure_buckets
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,7 @@ app.include_router(biometrics_router, prefix="/api/v1")
 app.include_router(briefs_router, prefix="/api/v1")
 app.include_router(soothing_router, prefix="/api/v1")
 app.include_router(push_router, prefix="/api/v1")
+app.include_router(audio_router, prefix="/api/v1")
 
 
 # Root health check
