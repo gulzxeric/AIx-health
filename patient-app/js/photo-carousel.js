@@ -39,7 +39,7 @@
       'z-index:10;opacity:0;transition:opacity 0.5s;pointer-events:none;' +
       'font-family:"Noto Sans SC",sans-serif;';
     this._container.appendChild(this._captionEl);
-    this._layers = this._container.querySelectorAll('.carousel-layer');
+    this._layers = Array.from(this._container.querySelectorAll('.carousel-layer'));
   };
 
   PhotoCarousel.prototype._randomKB = function () {
