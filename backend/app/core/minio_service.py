@@ -45,18 +45,15 @@ async def upload_photo(
     return object_url
 
 
-async def upload_audio(patient_id: UUID, file_bytes: bytes, filename: str) -> str:
+async def upload_audio(
+    patient_id: UUID,
+    file_bytes: bytes,
+    filename: str,
+    content_type: str = "audio/webm",
+) -> str:
     """上传音频到 MinIO，返回 object_url
 
     路径: {patient_id}/audio/{filename}
-
-    Args:
-        patient_id: 患者 ID
-        file_bytes: 文件字节数据
-        filename: 文件名（如 "audio.webm"）
-
-    Returns:
-        MinIO 对象 URL
     """
     bucket = settings.MINIO_BUCKET_VOICE
     object_name = f"{patient_id}/audio/{filename}"
@@ -65,11 +62,10 @@ async def upload_audio(patient_id: UUID, file_bytes: bytes, filename: str) -> st
         minio_client.put_object,
         bucket,
         object_name,
-        file_bytes,
+        io.BytesIO(file_bytes),
         len(file_bytes),
-        content_type="audio/webm",
+        content_type=content_type,
     )
-
     object_url = f"/{bucket}/{object_name}"
     logger.info("音频已上传到 MinIO: %s", object_url)
     return object_url
