@@ -103,7 +103,7 @@ async def report_session(
             recorded_at=datetime.now(timezone.utc),
         )
 
-stmt = select(ChatSession).where(ChatSession.id == session_uuid)
+    stmt = select(ChatSession).where(ChatSession.id == session_uuid)
     result = await db.execute(stmt)
     session = result.scalar_one_or_none()
 

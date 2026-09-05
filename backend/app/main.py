@@ -12,6 +12,11 @@ from app.api.v1.patient_config import router as config_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.photos import router as photos_router
 from app.api.v1.devices import router as devices_router
+from app.api.v1.memories import router as memories_router
+from app.api.v1.personas import router as personas_router
+from app.api.v1.biometrics import router as biometrics_router
+from app.api.v1.briefs import router as briefs_router
+from app.api.v1.soothing import router as soothing_router
 from app.api.v1.push import router as push_router
 from app.core.minio_client import ensure_buckets
 
@@ -65,6 +70,11 @@ app.include_router(config_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(photos_router, prefix="/api/v1")
 app.include_router(devices_router, prefix="/api/v1")
+app.include_router(memories_router, prefix="/api/v1")
+app.include_router(personas_router, prefix="/api/v1")
+app.include_router(biometrics_router, prefix="/api/v1")
+app.include_router(briefs_router, prefix="/api/v1")
+app.include_router(soothing_router, prefix="/api/v1")
 app.include_router(push_router, prefix="/api/v1")
 
 
