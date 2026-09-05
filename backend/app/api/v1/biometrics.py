@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -102,9 +103,7 @@ async def report_session(
             recorded_at=datetime.now(timezone.utc),
         )
 
-    from sqlalchemy import select
-
-    stmt = select(ChatSession).where(ChatSession.id == session_uuid)
+stmt = select(ChatSession).where(ChatSession.id == session_uuid)
     result = await db.execute(stmt)
     session = result.scalar_one_or_none()
 

@@ -75,7 +75,12 @@
 
   MockAPI.getBrief = function (date) {
     var d = date || new Date();
-    var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    var dateStr;
+    if (typeof d === 'string') {
+      dateStr = d; // 直接使用传入的日期字符串
+    } else {
+      dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
     return _fetch('/briefs/' + dateStr + '?patient_id=' + PATIENT_ID).catch(function () {
       return { vitality_index: 78, vitality_trend_pct: 5, top_topics: [], advice_text: '暂无数据' };
     });

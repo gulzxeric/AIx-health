@@ -12,12 +12,12 @@ const STATIC_CACHE_NAME = 'caregiver-static-v1';
 
 // 预缓存的核心资源
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/css/caregiver.css',
-  '/js/main.js',
-  '/js/mock-api.js',
-  '/manifest.json'
+  '/caregiver-app/index.html',
+  '/caregiver-app/css/caregiver.css',
+  '/caregiver-app/js/main.js',
+  '/caregiver-app/js/mock-api.js',
+  '/caregiver-app/js/api.js',
+  '/caregiver-app/manifest.json'
 ];
 
 // VAPID 公钥占位（后续由后端生成）
