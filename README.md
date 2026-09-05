@@ -116,6 +116,17 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | MinIO | ❌ | 照片/语音存储 |
 | ASR/TTS | ❌ | 语音识别/合成，演示用模拟数据 |
 
+**语音服务（可选，不启动则对话无语音、记忆文字录入仍可用）**：
+
+```bash
+# ASR :8200
+cd voice-services && .venv\Scripts\python asr_server.py
+# TTS :8300（官方 GPT-SoVITS 仓库）
+python api_v2.py -a 127.0.0.1 -p 8300 -c GPT_SoVITS/configs/tts_infer.yaml
+```
+
+详见 [voice-services/README.md](voice-services/README.md)（含默认音色 default.wav 配置）。
+
 ---
 
 ## 真实后端模式
@@ -169,7 +180,8 @@ AIX-health/
 | 数据库 | PostgreSQL + Alembic |
 | 对象存储 | MinIO（S3 兼容） |
 | LLM | OpenAI 兼容 API（可替换） |
-| ASR/TTS | 预留接口（FunASR / Coqui TTS） |
+| ASR | SenseVoice（funasr，voice-services/ 独立服务 :8200） |
+| TTS/克隆 | GPT-SoVITS（参考音频即克隆，独立服务 :8300，见 voice-services/README.md） |
 | 推送 | Web Push (VAPID) |
 | 调度 | APScheduler |
 
