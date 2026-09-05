@@ -81,11 +81,11 @@ async def upload_voice_sample(
     voice_sample: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    """上传语音样本 + 触发克隆（占位）
+    """上传语音样本 + 触发克隆
 
     1. 上传至 MinIO
     2. 更新 voice_sample_url
-    3. 异步触发声音克隆（占位）
+    3. 触发声音克隆（参考音频注册：转码+转写+校验），cfg 落库
     """
     # 查询人物库条目
     result = await db.execute(select(Persona).where(Persona.id == persona_id))
@@ -98,17 +98,26 @@ async def upload_voice_sample(
     try:
         audio_bytes = await voice_sample.read()
         filename = f"{persona_id}_voice_{voice_sample.filename}"
-        voice_sample_url = await upload_audio(persona.patient_id, audio_bytes, filename)
+        voice_sample_url = await upload_audio(
+            persona.patient_id,
+            audio_bytes,
+            filename,
+            content_type=voice_sample.content_type or "audio/webm",
+        )
 
         # Step 2: 更新 voice_sample_url
         persona.voice_sample_url = voice_sample_url
 
-        # Step 3: 异步触发声音克隆（占位模式返回 False，不阻塞）
-        cloned = await trigger_voice_clone(persona_id, voice_sample_url)
-        if cloned:
+        # Step 3: 触发声音克隆（参考音频注册：转码+转写+校验）
+        clone_cfg = await trigger_voice_clone(persona_id, voice_sample_url)
+        persona.voice_clone_cfg = clone_cfg
+        if clone_cfg.get("ok"):
             persona.voice_cloned = True
         else:
-            logger.info("声音克隆占位模式，未实际执行: persona_id=%s", persona_id)
+            logger.warning(
+                "声音克隆未完成: persona_id=%s, 原因=%s",
+                persona_id, clone_cfg.get("error"),
+            )
 
         await db.commit()
         await db.refresh(persona)
