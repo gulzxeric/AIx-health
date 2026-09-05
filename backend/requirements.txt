@@ -14,3 +14,5 @@ apscheduler==3.10.4
 sse-starlette==2.1.0
 python-multipart==0.0.12
 pywebpush==1.14.1
+pytest
+pytest-asyncio
