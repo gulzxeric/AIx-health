@@ -148,7 +148,7 @@ const MockAPI = (function () {
       return new Promise(function (resolve) {
         setTimeout(function () {
           resolve(MOCK_CONFIG);
-        }, 300);
+        }, 300); // 模拟网络延迟
       });
     },
 
@@ -158,7 +158,11 @@ const MockAPI = (function () {
      * @returns {Promise<Array>} 照片数组 [{ id, url, caption, era }]
      */
     getPhotos: function () {
-      return PHOTO_PLACEHOLDERS; // 同步返回，模拟已缓存
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve(PHOTO_PLACEHOLDERS);
+        }, 200);
+      });
     },
 
     /**
@@ -170,6 +174,7 @@ const MockAPI = (function () {
     sendChatMessage: function (data) {
       return new Promise(function (resolve) {
         setTimeout(function () {
+          // 模拟不同的回复
           var replies = [
             '今天天气不错啊，要不要出去走走？',
             '我记得你最爱吃糖葫芦了。',
@@ -228,4 +233,5 @@ const MockAPI = (function () {
   };
 })();
 
+// 导出（浏览器环境作为全局变量）
 window.MockAPI = MockAPI;

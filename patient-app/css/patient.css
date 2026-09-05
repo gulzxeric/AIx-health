@@ -1,95 +1,574 @@
 /**
  * patient.css - 患者端数字记忆相框样式
- * 拟物化外壳（胡桃木纹理、斜切衬垫、五金角、3层阴影）
- * 状态驱动显示 · Ken Burns 轮播 · 对话UI · 舒缓模式 · HUD
+ * ======================================
+ * 包含：
+ * - 全局样式（全屏黑底、字体、无滚动条）
+ * - 拟物化外壳（胡桃木纹理、斜切衬垫、五金角、3层阴影）
+ * - 状态驱动显示（data-state 控制各状态容器显示/隐藏）
+ * - Ken Burns 照片轮播（缩放+平移动画、淡入淡出）
+ * - 对话 UI（数字人形象、大字幕毛玻璃、声波动画、TTS脉冲）
+ * - 舒缓模式（暖色遮罩、白噪音标识、呼吸动画）
+ * - HUD 模式（右侧抽屉、毛玻璃、注视点十字、声学曲线）
+ * - 响应式适配（vw/vh 单位、大屏放大）
  */
 
 /* ═══════════════════════════════════════════════════════════════════
-   0. 全局
+   0. 全局样式 & 字体
    ═══════════════════════════════════════════════════════════════════ */
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC","PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC",
+               "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial,
+               sans-serif;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   1. 主容器
+   1. 主容器 — 页面居中
    ═══════════════════════════════════════════════════════════════════ */
-#app{position:relative;width:90vmin;max-width:1200px;height:calc(90vmin*0.75);max-height:900px;margin:5vmin auto;border-radius:16px;transition:margin-right 0.3s cubic-bezier(0.4,0,0.2,1)}
+
+#app {
+  position: relative;
+  width: 90vmin;
+  max-width: 1200px;
+  height: calc(90vmin * 0.75);
+  max-height: 900px;
+  margin: 5vmin auto;
+  border-radius: 16px;
+  transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   2. 拟物化外壳
+   2. 拟物化外壳 — 胡桃木相框
    ═══════════════════════════════════════════════════════════════════ */
-.frame-container{position:relative;width:100%;height:100%;border-radius:16px;padding:24px;
-  background:repeating-linear-gradient(92deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px),repeating-linear-gradient(88deg,transparent,transparent 8px,rgba(139,90,43,.15) 8px,rgba(139,90,43,.15) 10px),linear-gradient(135deg,#5c3a1e,#7a4e2d 15%,#6b3f20 30%,#8b5e3c 45%,#6b3f20 60%,#7a4e2d 75%,#5c3a1e 90%,#4a2e14),repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(160,120,80,.08) 3px,rgba(160,120,80,.08) 5px);
-  box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08),0 8px 32px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3)}
 
-.frame-inner{position:relative;width:100%;height:100%;border-radius:8px;overflow:hidden;background:#1a1a1a;box-shadow:inset 0 2px 4px rgba(0,0,0,.8),inset 0 -1px 2px rgba(255,255,255,.05),inset 2px 0 3px rgba(0,0,0,.4),inset -2px 0 3px rgba(0,0,0,.4),0 1px 0 rgba(255,255,255,.1)}
-.frame-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.02),rgba(255,255,255,.12) 50%,rgba(255,255,255,.02));z-index:1;pointer-events:none}
+.frame-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  padding: 24px; /* 外框厚度 */
+
+  /* 胡桃木纹理 — 多层 CSS 渐变模拟 */
+  background:
+    /* 木纹年轮条纹 */
+    repeating-linear-gradient(
+      92deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.04) 2px,
+      rgba(0, 0, 0, 0.04) 4px
+    ),
+    repeating-linear-gradient(
+      88deg,
+      transparent,
+      transparent 8px,
+      rgba(139, 90, 43, 0.15) 8px,
+      rgba(139, 90, 43, 0.15) 10px
+    ),
+    /* 深色基底 */
+    linear-gradient(
+      135deg,
+      #5c3a1e 0%,
+      #7a4e2d 15%,
+      #6b3f20 30%,
+      #8b5e3c 45%,
+      #6b3f20 60%,
+      #7a4e2d 75%,
+      #5c3a1e 90%,
+      #4a2e14 100%
+    ),
+    /* 木纹高光条纹 */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(160, 120, 80, 0.08) 3px,
+      rgba(160, 120, 80, 0.08) 5px
+    );
+
+  /* 3 层外阴影 — 深色边缘 + 投影 */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),           /* 极细黑边 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),  /* 顶部高光 */
+    0 8px 32px rgba(0, 0, 0, 0.5),            /* 外部投影 */
+    0 2px 8px rgba(0, 0, 0, 0.3);             /* 外部投影第二层 */
+}
+
+/* 斜切衬垫效果 — 内框 */
+.frame-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1a1a1a;
+
+  /* 内阴影制造斜切深度 */
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.8),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.05),
+    inset 2px 0 3px rgba(0, 0, 0, 0.4),
+    inset -2px 0 3px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 边框斜切衬垫的高光斜面（利用伪元素） */
+.frame-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.02)
+  );
+  z-index: 1;
+  pointer-events: none;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   3. 五金角装饰
+   3. 物理五金角装饰
    ═══════════════════════════════════════════════════════════════════ */
-.frame-corner{position:absolute;width:20px;height:20px;border-radius:50%;z-index:20;pointer-events:none;background:radial-gradient(circle at 35% 30%,#e8d5b0,#c4a87a 30%,#8b7355 60%,#6b5535);box-shadow:inset 0 1px 2px rgba(255,255,255,.3),inset 0 -1px 2px rgba(0,0,0,.3),0 1px 3px rgba(0,0,0,.4)}
-.frame-corner--tl{top:-6px;left:-6px}
-.frame-corner--tr{top:-6px;right:-6px}
-.frame-corner--bl{bottom:-6px;left:-6px}
-.frame-corner--br{bottom:-6px;right:-6px}
+
+.frame-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  z-index: 20;
+  pointer-events: none;
+
+  /* 金属质感 — 径向渐变 */
+  background: radial-gradient(
+    circle at 35% 30%,
+    #e8d5b0 0%,
+    #c4a87a 30%,
+    #8b7355 60%,
+    #6b5535 100%
+  );
+
+  /* 金属光泽 */
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* 四个角落位置 */
+.frame-corner--tl { top: -6px;  left: -6px; }
+.frame-corner--tr { top: -6px;  right: -6px; }
+.frame-corner--bl { bottom: -6px; left: -6px; }
+.frame-corner--br { bottom: -6px; right: -6px; }
 
 /* ═══════════════════════════════════════════════════════════════════
    4. 状态驱动显示
    ═══════════════════════════════════════════════════════════════════ */
-.state-section{position:absolute;top:0;left:0;width:100%;height:100%;display:none}
-#app[data-state="COLD_START"] .state-COLD_START{display:flex}
-#app[data-state="STANDBY"] .state-STANDBY{display:block}
-#app[data-state="CHAT"] .state-CHAT{display:flex}
-#app[data-state="SOOTHING"] .state-SOOTHING{display:block}
+
+.state-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+/* 各状态通过 data-state 属性切换显示 */
+#app[data-state="COLD_START"] .state-COLD_START { display: flex; }
+#app[data-state="STANDBY"]   .state-STANDBY   { display: block; }
+#app[data-state="CHAT"]      .state-CHAT      { display: flex; }
+#app[data-state="SOOTHING"]  .state-SOOTHING  { display: block; }
 
 /* ═══════════════════════════════════════════════════════════════════
-   5. COLD_START
+   5. COLD_START — 设备码展示
    ═══════════════════════════════════════════════════════════════════ */
-.state-COLD_START{flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(ellipse at center,#2a2a2a,#0d0d0d)}
-.coldstart-title{font-size:clamp(1.4rem,3vw,2.4rem);color:#c4a87a;margin-bottom:16px;letter-spacing:2px;font-weight:300}
-.coldstart-subtitle{font-size:clamp(.85rem,1.5vw,1.1rem);color:#888;margin-bottom:24px}
-#qr-code{width:180px;height:180px;margin-bottom:20px}
-#qr-code svg{width:100%;height:100%}
-#device-code{font-size:clamp(2rem,4vw,3.6rem);font-weight:700;color:#f0e6d3;letter-spacing:8px;font-family:"Courier New",monospace;background:rgba(0,0,0,.3);padding:8px 24px;border-radius:8px;border:1px solid rgba(255,255,255,.1)}
-.coldstart-hint{font-size:clamp(.75rem,1.2vw,.9rem);color:#666;margin-top:16px}
+
+.state-COLD_START {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: radial-gradient(ellipse at center, #2a2a2a 0%, #0d0d0d 100%);
+}
+
+.coldstart-title {
+  font-size: clamp(1.4rem, 3vw, 2.4rem);
+  color: #c4a87a;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+  font-weight: 300;
+}
+
+.coldstart-subtitle {
+  font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+  color: #888;
+  margin-bottom: 24px;
+}
+
+#qr-code {
+  width: 180px;
+  height: 180px;
+  margin-bottom: 20px;
+}
+
+#qr-code svg {
+  width: 100%;
+  height: 100%;
+}
+
+#device-code {
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 700;
+  color: #f0e6d3;
+  letter-spacing: 8px;
+  font-family: "Courier New", monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.coldstart-hint {
+  font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+  color: #666;
+  margin-top: 16px;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   6. STANDBY — Ken Burns 轮播
+   6. STANDBY — 照片轮播 (Ken Burns)
    ═══════════════════════════════════════════════════════════════════ */
-.state-STANDBY{position:relative;width:100%;height:100%;overflow:hidden;background:#111}
-#photo-carousel{width:100%;height:100%;position:relative}
+
+.state-STANDBY {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+}
+
+#photo-carousel {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Ken Burns 动画关键帧 */
+@keyframes kenburns {
+  0% {
+    transform: scale(1.0);
+  }
+  100% {
+    transform: scale(1.15);
+  }
+}
+
+/* 照片层 */
+.carousel-layer {
+  position: absolute;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: transform, opacity;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   7. CHAT - 对话 UI
+   7. CHAT — 对话 UI
    ═══════════════════════════════════════════════════════════════════ */
-.state-CHAT{flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#16213e 50%,#0f0f1a);position:relative;overflow:hidden}
 
-#chat-avatar{width:120px;height:120px;border-radius:50%;margin-bottom:24px;position:relative;box-shadow:0 0 20px rgba(180,140,100,.2),0 0 40px rgba(180,140,100,.1),inset 0 2px 4px rgba(255,255,255,.1);background:radial-gradient(circle at 35% 35%,#f0d8b8,#d4a574 60%,#b8845a);transition:box-shadow .3s}
-#chat-avatar.tts-active{animation:ttsPulse .8s ease-in-out 3}
-@keyframes ttsPulse{0%,100%{box-shadow:0 0 20px rgba(180,140,100,.2),0 0 40px rgba(180,140,100,.1)}50%{box-shadow:0 0 30px rgba(180,140,100,.5),0 0 60px rgba(180,140,100,.3),0 0 80px rgba(180,140,100,.15)}}
-#chat-avatar::after{content:'';position:absolute;top:-4px;left:-4px;right:-4px;bottom:-4px;border-radius:50%;border:1px solid rgba(180,140,100,.2);animation:avatarRing 3s ease-in-out infinite}
-@keyframes avatarRing{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.8;transform:scale(1.05)}}
-#chat-persona-name{font-size:clamp(1rem,2vw,1.4rem);color:#c4a87a;margin-bottom:16px;font-weight:500;letter-spacing:1px}
-#chat-subtitle{font-size:clamp(1.8rem,4vw,3rem);text-align:center;line-height:1.6;padding:20px 40px;max-width:80%;background:rgba(0,0,0,.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;border:1px solid rgba(255,255,255,.08);color:#f0e6d3;min-height:100px;transition:opacity .3s}
-#chat-subtitle.listening{color:#888;font-size:clamp(1.2rem,2.5vw,1.8rem)}
-#chat-wave{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;height:40px}
-@keyframes waveAnim{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1.2)}}
-.wave-bar{display:inline-block;width:4px;height:20px;margin:0 2px;background:#7fdb7f;border-radius:2px;animation:waveAnim .8s ease-in-out infinite}
+.state-CHAT {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 数字人形象 — 圆形头像 */
+#chat-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 24px;
+  position: relative;
+
+  /* 朦胧发光边缘 */
+  box-shadow:
+    0 0 20px rgba(180, 140, 100, 0.2),
+    0 0 40px rgba(180, 140, 100, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+
+  /* L1 插画风格圆形头像 */
+  background: radial-gradient(circle at 35% 35%, #f0d8b8, #d4a574 60%, #b8845a 100%);
+
+  transition: box-shadow 0.3s ease;
+}
+
+/* TTS 播报时的脉冲发光 */
+#chat-avatar.tts-active {
+  animation: ttsPulse 0.8s ease-in-out 3;
+}
+
+@keyframes ttsPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(180, 140, 100, 0.2),
+      0 0 40px rgba(180, 140, 100, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(180, 140, 100, 0.5),
+      0 0 60px rgba(180, 140, 100, 0.3),
+      0 0 80px rgba(180, 140, 100, 0.15);
+  }
+}
+
+/* 数字人装饰光环 */
+#chat-avatar::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(180, 140, 100, 0.2);
+  animation: avatarRing 3s ease-in-out infinite;
+}
+
+@keyframes avatarRing {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* 数字人名字 */
+#chat-persona-name {
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  color: #c4a87a;
+  margin-bottom: 16px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* 大字幕区域 */
+#chat-subtitle {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  text-align: center;
+  line-height: 1.6;
+  padding: 20px 40px;
+  max-width: 80%;
+
+  /* 毛玻璃效果 */
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f0e6d3;
+  min-height: 100px;
+
+  transition: opacity 0.3s ease;
+}
+
+/* 倾听状态 */
+#chat-subtitle.listening {
+  color: #888;
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+}
+
+/* 声波动画容器 */
+#chat-wave {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+}
+
+/* 声波动画 */
+@keyframes waveAnim {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1.2);
+  }
+}
+
+.wave-bar {
+  display: inline-block;
+  width: 4px;
+  height: 20px;
+  margin: 0 2px;
+  background: #7fdb7f;
+  border-radius: 2px;
+  animation: waveAnim 0.8s ease-in-out infinite;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   8. SOOTHING
+   8. SOOTHING — 舒缓模式
    ═══════════════════════════════════════════════════════════════════ */
-.state-SOOTHING{position:relative;width:100%;height:100%;overflow:hidden}
-#soothing-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background:linear-gradient(135deg,rgba(255,140,0,.15),rgba(210,105,30,.25) 30%,rgba(184,115,51,.35) 60%,rgba(139,90,43,.3));opacity:0;transition:opacity 1.5s}
-#soothing-overlay.active{opacity:1;animation:breathe 6s ease-in-out infinite}
-@keyframes breathe{0%,100%{background:linear-gradient(135deg,rgba(255,140,0,.12),rgba(210,105,30,.2) 30%,rgba(184,115,51,.3) 60%,rgba(139,90,43,.25))}50%{background:linear-gradient(135deg,rgba(255,140,0,.2),rgba(210,105,30,.35) 30%,rgba(184,115,51,.45) 60%,rgba(139,90,43,.4))}}
-#white-noise-tag{display:none;position:absolute;bottom:48px;left:50%;transform:translateX(-50%);font-size:clamp(1rem,1.8vw,1.4rem);color:rgba(255,200,150,.8);letter-spacing:3px;background:rgba(0,0,0,.2);padding:8px 24px;border-radius:20px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid rgba(255,200,150,.1);z-index:5;animation:noisePulse 2s ease-in-out infinite}
-@keyframes noisePulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+.state-SOOTHING {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 暖色遮罩层 */
+#soothing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+
+  /* 橙色→琥珀色渐变，透明度过渡 */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 140, 0, 0.15) 0%,
+    rgba(210, 105, 30, 0.25) 30%,
+    rgba(184, 115, 51, 0.35) 60%,
+    rgba(139, 90, 43, 0.3) 100%
+  );
+
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+
+#soothing-overlay.active {
+  opacity: 1;
+}
+
+/* 柔和呼吸动画 */
+@keyframes breathe {
+  0%, 100% {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 140, 0, 0.12) 0%,
+      rgba(210, 105, 30, 0.2) 30%,
+      rgba(184, 115, 51, 0.3) 60%,
+      rgba(139, 90, 43, 0.25) 100%
+    );
+  }
+  50% {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 140, 0, 0.2) 0%,
+      rgba(210, 105, 30, 0.35) 30%,
+      rgba(184, 115, 51, 0.45) 60%,
+      rgba(139, 90, 43, 0.4) 100%
+    );
+  }
+}
+
+#soothing-overlay.active {
+  animation: breathe 6s ease-in-out infinite;
+}
+
+/* 白噪音标识 */
+#white-noise-tag {
+  display: none;
+  position: absolute;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  color: rgba(255, 200, 150, 0.8);
+  letter-spacing: 3px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 24px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 200, 150, 0.1);
+  z-index: 5;
+  animation: noisePulse 2s ease-in-out infinite;
+}
+
+@keyframes noisePulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   9. 响应式
+   9. HUD 模式 — 调试面板（叠加层）
    ═══════════════════════════════════════════════════════════════════ */
-@media(max-width:1024px){#app{width:98vw;height:calc(98vw*.75);margin:1vh auto;max-height:98vh}.frame-container{padding:16px}}
-@media(min-width:1920px){#app{width:80vmin;max-width:1600px;height:calc(80vmin*.75);max-height:1200px}.frame-container{padding:32px}.frame-corner{width:26px;height:26px}#chat-avatar{width:160px;height:160px}#chat-subtitle{font-size:clamp(2.4rem,3.5vw,3.6rem)}}
-@media(min-aspect-ratio:2/1){#app{width:60vmin;height:calc(60vmin*.75)}}
+
+/* HUD 面板在 body 级别，由 hud.js 动态控制 */
+
+/* ═══════════════════════════════════════════════════════════════════
+   10. 响应式适配
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 最小 1024x768 适配 */
+@media (max-width: 1024px) {
+  #app {
+    width: 98vw;
+    height: calc(98vw * 0.75);
+    margin: 1vh auto;
+    max-height: 98vh;
+  }
+  .frame-container {
+    padding: 16px;
+  }
+}
+
+/* 大屏 (>1920) 适当放大 */
+@media (min-width: 1920px) {
+  #app {
+    width: 80vmin;
+    max-width: 1600px;
+    height: calc(80vmin * 0.75);
+    max-height: 1200px;
+  }
+  .frame-container {
+    padding: 32px;
+  }
+  .frame-corner {
+    width: 26px;
+    height: 26px;
+  }
+  #chat-avatar {
+    width: 160px;
+    height: 160px;
+  }
+  #chat-subtitle {
+    font-size: clamp(2.4rem, 3.5vw, 3.6rem);
+  }
+}
+
+/* 异形屏/超宽屏适配 */
+@media (min-aspect-ratio: 2/1) {
+  #app {
+    width: 60vmin;
+    height: calc(60vmin * 0.75);
+  }
+}

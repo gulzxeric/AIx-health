@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4CAF50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="家属助手">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <title>AIX Health - 家属助手</title>
+  <link rel="stylesheet" href="css/caregiver.css">
+</head>
+<body>
+  <div class="app-container" id="app">
+    <!-- ============================================================
+         顶部状态栏
+         ============================================================ -->
+    <header class="status-bar" id="statusBar">
+      <div class="status-bar-left">
+        <span class="status-dot online" id="statusDot"></span>
+        <span class="patient-name" id="patientName">张伯伯</span>
+      </div>
+      <div class="status-bar-right">
+        <span>同步</span>
+        <span class="sync-time" id="syncTime">刚刚</span>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         主内容区域（Tab 页面容器）
+         ============================================================ -->
+    <main class="main-content" id="mainContent">
+
+      <!-- ── Tab 1: 对话流 ── -->
+      <section class="tab-page active" id="tabChat" role="tabpanel">
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <!-- 对话消息由 JS 动态渲染 -->
+            <div class="message left">
+              <div class="message-bubble">
+                欢迎使用家属助手！在这里可以记录与患者相关的记忆片段。<br>
+                试试发送一段文字、语音或照片吧。
+              </div>
+              <span class="message-time">系统消息</span>
+            </div>
+          </div>
+          <!-- 输入区 -->
+          <div class="chat-input-area" id="chatInputArea">
+            <button class="chat-input-btn" id="btnVoice" title="按住录音">🎤</button>
+            <input class="chat-input-text" id="chatInput" type="text" placeholder="输入记忆内容..." autocomplete="off">
+            <button class="chat-input-btn" id="btnPhoto" title="选择照片">📷</button>
+            <button class="chat-send-btn" id="btnSend" disabled>➤</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Tab 2: 记忆库 ── -->
+      <section class="tab-page" id="tabMemory" role="tabpanel">
+        <div class="memory-lib-container">
+          <div class="tag-filter-bar" id="tagFilterBar">
+            <span class="tag-item active" data-tag="all">全部</span>
+            <span class="tag-item" data-tag="年代">年代</span>
+            <span class="tag-item" data-tag="地点">地点</span>
+            <span class="tag-item" data-tag="事件">事件</span>
+            <span class="tag-item" data-tag="喜好">喜好</span>
+          </div>
+          <div class="memory-list" id="memoryList">
+            <!-- 记忆卡片由 JS 动态渲染 -->
+            <div class="loading-spinner">
+              <div class="spinner"></div>
+              <span>加载中...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Tab 3: 每日简报 ── -->
+      <section class="tab-page" id="tabBrief" role="tabpanel">
+        <div class="brief-container" id="briefContainer">
+          <!-- 日期选择器 -->
+          <div class="date-selector" id="dateSelector">
+            <!-- 由 JS 动态渲染 -->
+          </div>
+          <!-- 活力指数卡片 -->
+          <div class="vitality-card" id="vitalityCard">
+            <div class="vitality-ring">
+              <div class="vitality-ring-bg"></div>
+              <div class="vitality-ring-fill" id="vitalityRingFill"></div>
+              <div class="vitality-ring-inner">
+                <span class="vitality-number" id="vitalityNumber">--</span>
+                <span class="vitality-unit">活力</span>
+              </div>
+            </div>
+            <div class="vitality-info">
+              <div class="vitality-status-text" id="vitalityStatus">--</div>
+              <div class="vitality-trend" id="vitalityTrend">
+                <span>较昨日</span>
+                <span id="trendValue">--</span>
+              </div>
+            </div>
+          </div>
+          <!-- 高共鸣话题 -->
+          <div class="topics-section" id="topicsSection">
+            <div class="section-title">🔥 高共鸣话题 Top 3</div>
+            <div id="topicsList">
+              <div class="loading-spinner">
+                <div class="spinner"></div>
+                <span>加载中...</span>
+              </div>
+            </div>
+          </div>
+          <!-- 沟通建议 -->
+          <div class="advice-section" id="adviceSection">
+            <div class="advice-title">💡 沟通建议</div>
+            <div class="advice-text" id="adviceText">--</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============================================================
+         底部 Tab 导航
+         ============================================================ -->
+    <nav class="tab-bar" id="tabBar" role="tablist">
+      <button class="tab-item active" data-tab="chat" role="tab" aria-selected="true">
+        <span class="tab-icon">💬</span>
+        <span class="tab-label">对话流</span>
+      </button>
+      <button class="tab-item" data-tab="memory" role="tab" aria-selected="false">
+        <span class="tab-icon">🗂️</span>
+        <span class="tab-label">记忆库</span>
+      </button>
+      <button class="tab-item" data-tab="brief" role="tab" aria-selected="false">
+        <span class="tab-icon">📊</span>
+        <span class="tab-label">每日简报</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- 隐藏的文件输入 -->
+  <input type="file" id="photoInput" accept="image/*" style="display:none">
+
+  <!-- Toast 容器 -->
+  <div id="toastContainer"></div>
+
+  <!-- ============================================================
+       JavaScript
+       ============================================================ -->
+  <script src="js/mock-api.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
