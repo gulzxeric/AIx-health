@@ -8,6 +8,7 @@ from app.models.photo import Photo
 from app.models.persona import Persona
 from app.models.asset_pack import AssetPack
 from app.models.daily_brief import DailyBrief
+from app.models.chat_session import ChatSession
 from app.models.push_subscription import PushSubscription
 
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "Persona",
     "AssetPack",
     "DailyBrief",
+    "ChatSession",
     "PushSubscription",
 ]

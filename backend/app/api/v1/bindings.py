@@ -127,12 +127,13 @@ async def complete_config(
     db.add(config)
     await db.commit()
 
-    # 3. 触发资产包生成（不阻断返回）
+# 3. 触发资产包生成（不阻断返回）
     try:
         await generate_asset_pack(req.patient_id, req.era, req.region)
     except Exception as e:
         logger.error("资产包生成失败 patient_id=%s error=%s", req.patient_id, e)
-        return CompleteConfigResponse(
+        # 不阻断流程，配置已写入
+    return CompleteConfigResponse(
             success=True,
             patient_id=req.patient_id,
             config={

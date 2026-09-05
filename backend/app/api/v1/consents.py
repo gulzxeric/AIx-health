@@ -11,9 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.binding_service import (
     create_caregiver,
     find_caregiver_by_phone,
+    find_patient_by_code,
 )
 from app.database import get_db
 from app.models.care_binding import CareBinding
+from app.models.caregiver import Caregiver
 from app.models.consent import Consent
 from app.models.patient import Patient
 from app.schemas.binding import ConsentSignRequest, ConsentSignResponse
@@ -41,7 +43,14 @@ async def sign_consent(
     req: ConsentSignRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """签署知情同意"""
+    """签署知情同意
+
+    1. 查找或创建家属
+    2. 生成 consent_version (v1.0)
+    3. 计算 content_hash (SHA256)
+    4. 写入 consents 表
+    5. 更新 care_bindings.consent_id
+    """
     # 1. 检查患者是否存在
     result = await db.execute(
         select(Patient).where(Patient.id == req.patient_id)

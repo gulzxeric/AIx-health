@@ -18,7 +18,12 @@ async def get_patient_config(
     patient_id: UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    """患者端拉取配置 + 资产包"""
+    """患者端拉取配置 + 资产包
+
+    1. 查 patient_configs
+    2. 查 asset_packs
+    3. 返回 { config, asset_pack }
+    """
     # 1. 查配置
     result = await db.execute(
         select(PatientConfig).where(PatientConfig.patient_id == patient_id)
