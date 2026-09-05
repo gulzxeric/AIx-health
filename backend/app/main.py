@@ -12,6 +12,7 @@ from app.api.v1.patient_config import router as config_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.photos import router as photos_router
 from app.api.v1.devices import router as devices_router
+from app.api.v1.push import router as push_router
 from app.core.minio_client import ensure_buckets
 
 logger = logging.getLogger(__name__)
