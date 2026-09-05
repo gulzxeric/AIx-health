@@ -157,6 +157,21 @@ const MockAPI = {
   },
 
   /**
+   * 音频转文字（语音录记忆）
+   * 对应 POST /api/v1/audio/transcribe
+   * @param {Blob} blob - 录音 blob
+   * @returns {Promise<Object>} { text, language }
+   */
+  transcribeAudio: (blob) => {
+    console.log(`[MockAPI] transcribeAudio: size=${blob && blob.size}`);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ text: '我爸以前在广州造船厂上班，每天下班都带我去江边看船', language: 'zh' });
+      }, 800);
+    });
+  },
+
+  /**
    * 编辑记忆实体
    * @param {string} id - 记忆 ID
    * @param {Object} entities - 更新后的实体

@@ -28,6 +28,10 @@
     statusPollInterval: null
   };
 
+  var mediaRecorder = null;
+  var audioChunks = [];
+  var submitPending = false;
+
   // ================================================================
   // DOM 引用
   // ================================================================
@@ -443,22 +447,56 @@
     submitMemoryEntry({ text: desc, photoDataUrl: dataUrl });
   }
 
-  /** 模拟语音录制 */
+  /** 开始录音（真实 MediaRecorder；不支持时由 stopRecording 回退模拟） */
   function startRecording() {
     if (AppState.isRecording) return;
-    AppState.isRecording = true;
 
-    DOM.btnVoice.classList.add('recording');
-    DOM.btnVoice.textContent = '⏺';
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      showToast('当前浏览器不支持录音');
+      return;
+    }
 
-    showToast('录音中... 松开发送');
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      AppState.isRecording = true;
 
-    // 模拟录音动画（实际项目使用 MediaRecorder）
-    AppState.recordingTimer = setTimeout(function () {
-      stopRecording(true);
-    }, 5000); // 模拟 5 秒录音
+      DOM.btnVoice.classList.add('recording');
+      DOM.btnVoice.textContent = '⏺';
+
+      showToast('录音中... 松开发送');
+
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = function (e) {
+        if (e.data && e.data.size) audioChunks.push(e.data);
+      };
+      mediaRecorder.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        if (!submitPending) return;
+
+        var blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        if (blob.size < 2000) {
+          showToast('录音太短，请按住说 1 秒以上');
+          return;
+        }
+        showToast('语音识别中...');
+        MockAPI.transcribeAudio(blob).then(function (res) {
+          var text = ((res && res.text) || '').trim();
+          if (!text) {
+            showToast('没听清，再试一次');
+            return;
+          }
+          submitMemoryEntry({ text: text });
+        }).catch(function () {
+          showToast('语音识别不可用');
+        });
+      };
+      mediaRecorder.start();
+    }).catch(function () {
+      showToast('无法访问麦克风');
+    });
   }
 
+  /** 结束录音（submit=true 时提交转写） */
   function stopRecording(submit) {
     if (!AppState.isRecording) return;
     AppState.isRecording = false;
@@ -466,22 +504,21 @@
     DOM.btnVoice.classList.remove('recording');
     DOM.btnVoice.textContent = '🎤';
 
-    if (AppState.recordingTimer) {
-      clearTimeout(AppState.recordingTimer);
-      AppState.recordingTimer = null;
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      submitPending = submit;
+      mediaRecorder.stop();
+      return;
     }
 
+    // 回退：无 mic 环境（演示）沿用罐头文本
     if (submit) {
-      showToast('语音识别中...');
-      // 模拟语音识别结果
       var mockAsrTexts = [
         '我爸以前在广州造船厂上班，每天下班都带我去江边看船',
         '小时候过年最喜欢去外婆家，她做的年糕特别好吃',
         '阿珍是我老伴，我们是在厂里认识的，她唱歌特别好听',
         '退休后喜欢去公园下象棋，老李头每次都输给我'
       ];
-      var randomText = mockAsrTexts[Math.floor(Math.random() * mockAsrTexts.length)];
-      sendTextMessage(randomText);
+      submitMemoryEntry({ text: mockAsrTexts[Math.floor(Math.random() * mockAsrTexts.length)] });
     }
   }
 
