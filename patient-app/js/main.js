@@ -168,14 +168,19 @@
 
   function stopWaveAnimation() { if (chatWaveEl) chatWaveEl.innerHTML = ''; }
 
-  // SOOTHING
+  // SOOTHING — 超时时间可配置（默认 20 分钟，演示用 15s）
+  var SOOTHING_TIMEOUT_MS = 20 * 60 * 1000; // 生产: 20min
+  // 检测 URL 参数 ?soothing_timeout=15 可覆盖（单位秒）
+  var stMatch = location.search.match(/[?&]soothing_timeout=(\d+)/);
+  if (stMatch) SOOTHING_TIMEOUT_MS = parseInt(stMatch[1], 10) * 1000;
+
   function startSoothing() {
     if (soothingOverlayEl) soothingOverlayEl.classList.add('active');
     var tag = document.getElementById('white-noise-tag');
     if (tag) tag.style.display = 'block';
     setTimeout(function () {
       if (stateMachine.getCurrentState() === STATES.SOOTHING) stateMachine.transition('settled_timeout');
-    }, 10000);
+    }, SOOTHING_TIMEOUT_MS);
   }
 
   function stopSoothing() {
