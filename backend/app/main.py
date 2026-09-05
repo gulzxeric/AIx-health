@@ -1,3 +1,5 @@
+import logging
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,6 +14,8 @@ from app.api.v1.photos import router as photos_router
 from app.api.v1.devices import router as devices_router
 from app.core.minio_client import ensure_buckets
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,9 +28,16 @@ async def lifespan(app: FastAPI):
 
     await ensure_buckets()
 
+    # Start scheduler for periodic tasks
+    from app.core.scheduler import setup_scheduler
+    setup_scheduler(app)
+    logger.info("定时调度器已启动")
+
     yield
 
-    # Shutdown: dispose engine
+    # Shutdown: stop scheduler and dispose engine
+    from app.core.scheduler import scheduler
+    scheduler.shutdown(wait=False)
     await engine.dispose()
 
 

@@ -10,6 +10,7 @@ from app.models.asset_pack import AssetPack
 from app.models.daily_brief import DailyBrief
 from app.models.chat_session import ChatSession
 from app.models.push_subscription import PushSubscription
+from app.models.biometric_raw import BiometricRaw
 
 __all__ = [
     "Patient",
@@ -24,4 +25,5 @@ __all__ = [
     "DailyBrief",
     "ChatSession",
     "PushSubscription",
+    "BiometricRaw",
 ]
