@@ -1,2 +1,0 @@
-"""RetinaEcho API application package."""
-

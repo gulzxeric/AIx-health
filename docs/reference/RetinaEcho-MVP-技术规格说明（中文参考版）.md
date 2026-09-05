@@ -91,7 +91,7 @@ docs/
 ### 4.1 ID 与时间约定
 
 - 持久化主键使用 UUIDv7。
-- 对外使用不透明前缀 ID：`fam_`、`pat_`、`dev_`、`per_`、`mem_`。
+- 对外使用不透明前缀 ID：`fam_`、`pat_`、`dev_`、`per_`、`mem_`。 
 - 昵称、姓名、手机号和人物显示名均不得作为关联键。
 - API 时间统一为 UTC RFC 3339，数据库使用 `timestamptz`。
 
