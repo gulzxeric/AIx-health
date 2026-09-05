@@ -81,5 +81,14 @@
     });
   };
 
+  MockAPI.transcribeAudio = async function (blob) {
+    const fd = new FormData();
+    fd.append('file', blob, 'voice.webm');
+    fd.append('language', 'zh');
+    const res = await fetch(BASE + '/audio/transcribe', { method: 'POST', body: fd });
+    if (!res.ok) throw await res.json().catch(() => ({ detail: res.statusText }));
+    return res.json();
+  };
+
   console.log('[API] 已覆盖 MockAPI，连接后端:', BASE);
 })();

@@ -271,6 +271,15 @@
     return this._currentIndex;
   };
 
+  /**
+   * 获取当前照片对象
+   * @returns {Object|null} { id, url|object_url, persona_name, ... }
+   */
+  PhotoCarousel.prototype.getCurrentPhoto = function () {
+    if (!this._photos || this._photos.length === 0) return null;
+    return this._photos[this._currentIndex] || null;
+  };
+
   // ── 导出 ──────────────────────────────────────────────────────────
 
   global.PhotoCarousel = PhotoCarousel;

@@ -53,6 +53,21 @@
   /** @type {string} 当前 session ID */
   var currentSessionId = null;
 
+  /** @type {VoiceManager} 语音管理器 */
+  var voiceManager = null;
+
+  /** @type {HTMLElement} TTS 音频元素 */
+  var chatAudioEl = null;
+
+  /** @type {boolean} 是否等待回复中 */
+  var waitingReply = false;
+
+  /** @type {number} 空闲超时定时器 */
+  var idleTimer = null;
+
+  /** @type {number} 空闲超时时间 (ms) */
+  var IDLE_TIMEOUT_MS = 90000;
+
   // ── 初始化 ────────────────────────────────────────────────────────
 
   /**
@@ -70,6 +85,23 @@
     // 3. 初始化照片轮播（暂不启动）
     var photos = MockAPI.getPhotos();
     photoCarousel = new PhotoCarousel(photoCarouselEl, photos);
+
+    // 3.5 语音管理器（失败回退模拟对话）
+    chatAudioEl = document.getElementById('chat-audio');
+    voiceManager = new VoiceManager();
+    voiceManager.init().then(function (ok) {
+      console.log('[Voice] 初始化:', ok ? '可用' : '不可用（回退模拟对话）');
+    });
+    voiceManager.onSpeechStart = function () {
+      if (stateMachine.getCurrentState() === STATES.STANDBY) {
+        stateMachine.transition('speech_detected');
+      }
+    };
+    voiceManager.onUtterance = function (blob) {
+      if (stateMachine.getCurrentState() === STATES.CHAT) {
+        handleUtterance(blob);
+      }
+    };
 
     // 4. 注册状态监听器
     stateMachine.addEventListener(onStateChange);
@@ -252,17 +284,26 @@
   function startChat() {
     chatting = true;
 
-    // 设置数字人形象（L1 插画风格占位）
     if (chatAvatarEl) {
       chatAvatarEl.style.backgroundImage =
         'radial-gradient(circle at 35% 35%, #f0d8b8, #d4a574 60%, #b8845a 100%)';
     }
 
-    // 开始声波动画
     startWaveAnimation();
 
-    // 模拟对话交互
-    simulateChat();
+    if (voiceManager && voiceManager.available) {
+      // 真实语音闭环
+      MockAPI.startSession().then(function (result) {
+        currentSessionId = result.session_id;
+        if (chatSubtitleEl) {
+          chatSubtitleEl.textContent = '... 倾听中';
+          chatSubtitleEl.className = 'listening';
+        }
+        resetIdleTimer();
+      });
+    } else {
+      simulateChat();
+    }
   }
 
   /**
@@ -270,16 +311,104 @@
    */
   function stopChat() {
     chatting = false;
+    waitingReply = false;
     if (chatSimTimer) {
       clearTimeout(chatSimTimer);
       chatSimTimer = null;
     }
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+    if (voiceManager) voiceManager.resume();
+    if (chatAudioEl) chatAudioEl.pause();
     stopWaveAnimation();
 
-    // 结束 session
     if (currentSessionId) {
       MockAPI.endSession(currentSessionId);
       currentSessionId = null;
+    }
+  }
+
+  /** 空闲超时回 STANDBY（每次交互重置） */
+  function resetIdleTimer() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () {
+      if (stateMachine.getCurrentState() === STATES.CHAT) {
+        stateMachine.transition('silence_timeout');
+      }
+    }, IDLE_TIMEOUT_MS);
+  }
+
+  /** 处理一句话录音：转写 -> 对话 -> 播报 */
+  function handleUtterance(blob) {
+    if (waitingReply || !currentSessionId) return;
+    waitingReply = true;
+    resetIdleTimer();
+
+    if (chatSubtitleEl) {
+      chatSubtitleEl.textContent = '... 倾听中';
+      chatSubtitleEl.className = 'listening';
+    }
+
+    MockAPI.transcribeAudio(blob).then(function (res) {
+      var text = ((res && res.text) || '').trim();
+      if (!text) {
+        waitingReply = false;
+        return;
+      }
+
+      var photo = photoCarousel ? photoCarousel.getCurrentPhoto() : null;
+      var payload = {
+        session_id: currentSessionId,
+        asr_text: text,
+        photo_id: (photo && photo.persona_name && photo.id) ? photo.id : null
+      };
+
+      MockAPI.sendChatMessage(payload).then(function (result) {
+        showReply(result);
+      }).catch(function () {
+        waitingReply = false;
+      });
+    }).catch(function () {
+      waitingReply = false;
+    });
+  }
+
+  /** 展示回复：字幕+角色名+HUD+音频播报（播放期间暂停 VAD） */
+  function showReply(result) {
+    if (chatSubtitleEl) {
+      chatSubtitleEl.textContent = '「' + result.reply_text + '」';
+      chatSubtitleEl.className = 'speaking';
+    }
+
+    var personaNameEl = document.getElementById('chat-persona-name');
+    if (personaNameEl && result.persona) {
+      personaNameEl.textContent = result.persona;
+    }
+
+    if (hudPanel && hudPanel.isVisible()) {
+      hudPanel.updatePromptInfo('回复: ' + result.reply_text);
+      hudPanel.updateVoiceSource(result.persona + ' / ' + result.voice_source);
+    }
+
+    simulateTTSPulse();
+
+    var finish = function () {
+      if (voiceManager) voiceManager.resume();
+      waitingReply = false;
+      resetIdleTimer();
+    };
+
+    if (result.reply_audio_url && chatAudioEl) {
+      if (voiceManager) voiceManager.suspend();
+      chatAudioEl.src = result.reply_audio_url;
+      chatAudioEl.onended = finish;
+      chatAudioEl.onerror = finish;
+      chatAudioEl.play().catch(finish);
+    } else {
+      // 无音频（TTS 未配置）：按 3s 模拟播报后恢复
+      setTimeout(finish, 3000);
     }
   }
 

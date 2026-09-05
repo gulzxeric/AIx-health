@@ -35,6 +35,7 @@ const MockAPI = (function () {
         '</svg>'
       ),
       caption: '1985年·全家福',
+      persona_name: '阿珍',
       era: '1980s'
     },
     {
@@ -73,6 +74,7 @@ const MockAPI = (function () {
         '</svg>'
       ),
       caption: '结婚照·1978',
+      persona_name: '阿珍',
       era: '1970s'
     },
     {
@@ -174,7 +176,15 @@ const MockAPI = (function () {
     sendChatMessage: function (data) {
       return new Promise(function (resolve) {
         setTimeout(function () {
-          // 模拟不同的回复
+          if (data && data.photo_id) {
+            resolve({
+              reply_text: '是我呀，阿珍。我还记得那年咱们在厂门口拍的这张。',
+              reply_audio_url: null,
+              persona: '阿珍',
+              voice_source: 'cloned'
+            });
+            return;
+          }
           var replies = [
             '今天天气不错啊，要不要出去走走？',
             '我记得你最爱吃糖葫芦了。',
@@ -214,6 +224,21 @@ const MockAPI = (function () {
         setTimeout(function () {
           resolve({ session_id: 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8) });
         }, 200);
+      });
+    },
+
+    /**
+     * 音频转文字（患者端语音对话）
+     * 对应 POST /api/v1/audio/transcribe
+     * @param {Blob} blob
+     * @returns {Promise<Object>} { text, language }
+     */
+    transcribeAudio: function (blob) {
+      console.log('[MockAPI] transcribeAudio: size=', blob && blob.size);
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          resolve({ text: '阿珍，你还记得我吗？', language: 'zh' });
+        }, 600);
       });
     },
 
