@@ -10,28 +10,31 @@
 const CACHE_NAME = 'caregiver-cache-v1';
 const STATIC_CACHE_NAME = 'caregiver-static-v1';
 
-// 预缓存的核心资源
+// 预缓存的核心资源（相对路径，匹配任意部署根目录）
 const PRECACHE_URLS = [
-  '/caregiver-app/index.html',
-  '/caregiver-app/css/caregiver.css',
-  '/caregiver-app/js/main.js',
-  '/caregiver-app/js/mock-api.js',
-  '/caregiver-app/js/api.js',
-  '/caregiver-app/manifest.json'
+  './',
+  'index.html',
+  'css/caregiver.css',
+  'js/main.js',
+  'js/mock-api.js',
+  'js/api.js',
+  'manifest.json'
 ];
 
 // VAPID 公钥占位（后续由后端生成）
 const VAPID_PUBLIC_KEY = '';
 
 // ================================================================
-// 安装事件：预缓存核心资源
+// 安装事件：预缓存核心资源（单项失败不阻塞安装）
 // ================================================================
 self.addEventListener('install', (event) => {
   console.log('[SW] Install 事件触发');
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME).then((cache) => {
       console.log('[SW] 预缓存核心资源');
-      return cache.addAll(PRECACHE_URLS);
+      return Promise.allSettled(
+        PRECACHE_URLS.map((url) => cache.add(url))
+      );
     }).then(() => {
       // 跳过等待，立即激活
       return self.skipWaiting();
@@ -110,7 +113,7 @@ async function cacheFirstStrategy(request) {
   } catch (error) {
     console.log('[SW] 网络请求失败，返回离线页面:', request.url);
     // 返回缓存的首页作为降级
-    return caches.match('/index.html');
+    return caches.match('./');
   }
 }
 

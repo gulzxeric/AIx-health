@@ -28,7 +28,10 @@
     // 同步返回接口，但真实 API 是异步的，用缓存做桥接
     if (MockAPI._photosCache) return MockAPI._photosCache;
     _fetch('/photos?patient_id=' + PATIENT_ID).then(function (photos) {
-      MockAPI._photosCache = photos;
+      // 后端字段为 object_url（现为 presigned URL），轮播需要 url 字段
+      MockAPI._photosCache = (photos || []).map(function (p) {
+        return Object.assign({}, p, { url: p.url || p.object_url });
+      });
     }).catch(function () {});
     return [];
   };
