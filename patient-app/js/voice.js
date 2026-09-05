@@ -41,6 +41,10 @@
       self._stream = stream;
       var Ctx = window.AudioContext || window.webkitAudioContext;
       self._ctx = new Ctx();
+      if (self._ctx.state === 'suspended') {
+        self._ctx.resume();
+        self._watchGestureResume();
+      }
       var source = self._ctx.createMediaStreamSource(stream);
       self._analyser = self._ctx.createAnalyser();
       self._analyser.fftSize = 1024;
@@ -52,6 +56,36 @@
       console.warn('[Voice] 麦克风不可用:', err);
       return false;
     });
+  };
+
+  /**
+   * 手势兜底恢复 AudioContext：
+   * 无用户手势时 Chrome 以 suspended 态创建 context（mic 授权≠页面手势），
+   * analyser 无数据会导致 VAD 恒哑。监听任一 click/keydown/touchstart，
+   * 若 context 仍 suspended 则 resume()，恢复成功后移除全部监听。
+   */
+  VoiceManager.prototype._watchGestureResume = function () {
+    var self = this;
+    var events = ['click', 'keydown', 'touchstart'];
+    var handler = function () {
+      if (!self._ctx || self._ctx.state !== 'suspended') {
+        detach();
+        return;
+      }
+      self._ctx.resume().then(function () {
+        detach();
+      }, function () {
+        /* 恢复失败：保留监听，等待下一次手势 */
+      });
+    };
+    var detach = function () {
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], handler);
+      }
+    };
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], handler);
+    }
   };
 
   VoiceManager.prototype._startMeter = function () {
@@ -124,16 +158,32 @@
     try { rec.stop(); } catch (e) { /* ignore */ }
   };
 
-  /** 播放 TTS 期间暂停检测 */
-  VoiceManager.prototype.suspend = function () {
-    this._suspended = true;
+  /**
+   * 丢弃当前未完成的录音：
+   * 转写/播报等待期用户插话时，VAD 已开始录音但该段为残句，
+   * 置空 onstop（不产出 blob）后 stop()，防止 recorder 永久录音泄漏。
+   * 正常路径 _finishRecording 已自行处理 onstop 且 stop 后 state 为 inactive，此处为 no-op。
+   */
+  VoiceManager.prototype._killRecorder = function () {
+    var rec = this._recorder;
+    if (rec && rec.state !== 'inactive') {
+      rec.onstop = null;
+      try { rec.stop(); } catch (e) { /* ignore */ }
+    }
   };
 
-  /** 播放完恢复（重置状态防误触发） */
+  /** 播放 TTS 期间暂停检测（并清理可能已开始的残段录音） */
+  VoiceManager.prototype.suspend = function () {
+    this._suspended = true;
+    this._killRecorder();
+  };
+
+  /** 播放完恢复（重置状态防误触发，并清理残留录音器） */
   VoiceManager.prototype.resume = function () {
     this._suspended = false;
     this._silenceSince = 0;
     this._speechActive = false;
+    this._killRecorder();
   };
 
   global.VoiceManager = VoiceManager;
