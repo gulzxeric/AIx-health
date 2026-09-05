@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="数字记忆相框 - 患者端">
+  <title>数字记忆相框</title>
+
+  <!-- 字体预加载 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <!-- 样式表 -->
+  <link rel="stylesheet" href="css/patient.css">
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       主容器 — 页面居中
+       通过 data-state 属性驱动状态切换
+       ════════════════════════════════════════════════════════════════ -->
+  <div id="app" data-state="COLD_START">
+
+    <!-- ── 拟物化外壳 ──────────────────────────────────────────── -->
+    <div class="frame-container">
+
+      <!-- 四个五金角装饰 -->
+      <div class="frame-corner frame-corner--tl"></div>
+      <div class="frame-corner frame-corner--tr"></div>
+      <div class="frame-corner frame-corner--bl"></div>
+      <div class="frame-corner frame-corner--br"></div>
+
+      <!-- 斜切衬垫内框 -->
+      <div class="frame-inner">
+
+        <!-- ═══════════════════════════════════════════════════════
+             状态 1: COLD_START — 设备码展示 + 二维码
+             ═══════════════════════════════════════════════════════ -->
+        <div class="state-section state-COLD_START">
+          <div class="coldstart-title">数字记忆相框</div>
+          <div class="coldstart-subtitle">请家属使用手机扫描二维码完成绑定</div>
+          <div id="qr-code"></div>
+          <div id="device-code">------</div>
+          <div class="coldstart-hint">等待家属端扫码绑定...</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════
+             状态 2: STANDBY — 照片轮播
+             ═══════════════════════════════════════════════════════ -->
+        <div class="state-section state-STANDBY">
+          <div id="photo-carousel"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════
+             状态 3: CHAT — 对话UI
+             ═══════════════════════════════════════════════════════ -->
+        <div class="state-section state-CHAT">
+          <!-- 数字人形象 -->
+          <div id="chat-avatar"></div>
+          <div id="chat-persona-name">老街坊</div>
+          <!-- 大字幕区 -->
+          <div id="chat-subtitle">你好，今天想聊什么？</div>
+          <!-- 声波动画 -->
+          <div id="chat-wave"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════
+             状态 4: SOOTHING — 舒缓模式
+             ═══════════════════════════════════════════════════════ -->
+        <div class="state-section state-SOOTHING">
+          <!-- 暖色遮罩 -->
+          <div id="soothing-overlay"></div>
+          <!-- 白噪音标识 -->
+          <div id="white-noise-tag">♫ 白噪音</div>
+          <!-- 舒缓提示文字 -->
+          <div style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);color:rgba(220,180,140,0.6);font-size:clamp(1rem,2vw,1.6rem);letter-spacing:2px;z-index:3;text-align:center;">
+            天快黑了<br>我陪您歇会儿
+          </div>
+        </div>
+
+      </div><!-- /frame-inner -->
+    </div><!-- /frame-container -->
+  </div><!-- /app -->
+
+  <!-- ════════════════════════════════════════════════════════════════
+       JavaScript 模块加载
+       加载顺序：依赖关系明确
+       1. mock-api.js — 无依赖
+       2. state-machine.js — 无依赖
+       3. photo-carousel.js — 无依赖
+       4. hud.js — 无依赖
+       5. main.js — 依赖以上所有模块
+       ════════════════════════════════════════════════════════════════ -->
+  <script src="js/mock-api.js"></script>
+  <script src="js/state-machine.js"></script>
+  <script src="js/photo-carousel.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
