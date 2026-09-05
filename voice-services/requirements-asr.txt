@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+funasr
+torch
+torchaudio
+modelscope
+numpy
+pytest
+httpx
