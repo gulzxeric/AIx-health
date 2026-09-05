@@ -18,7 +18,7 @@ from app.schemas.memory import (
 )
 from app.core.asr_service import speech_to_text
 from app.core.face_service import detect_faces, compare_faces
-from app.core.llm_pipeline import extract_entities, generate_embedding
+from app.core.llm_pipeline import describe_image, extract_entities, generate_embedding
 from app.core.minio_service import upload_photo
 
 logger = logging.getLogger(__name__)
@@ -26,15 +26,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/memories", tags=["记忆管理"])
 
 
-def _decode_data_url(data_url: str) -> tuple[bytes, str] | None:
-    """解析 data URL（如 data:image/png;base64,xxx），返回 (bytes, filename)。非 data URL 返回 None。"""
+def _decode_data_url(data_url: str) -> tuple[bytes, str, str] | None:
+    """解析 data URL（如 data:image/png;base64,xxx），返回 (bytes, filename, mime)。非 data URL 返回 None。"""
     if not data_url.startswith("data:"):
         return None
     try:
         header, payload = data_url.split(",", 1)
         content_type = header.split(";")[0].split(":", 1)[1] or "image/png"
         ext = content_type.split("/")[-1].replace("jpeg", "jpg")
-        return base64.b64decode(payload), f"photo-{uuid.uuid4()}.{ext}"
+        return base64.b64decode(payload), f"photo-{uuid.uuid4()}.{ext}", content_type
     except Exception as e:
         logger.error("data URL 解析失败: %s", e)
         return None
@@ -59,45 +59,59 @@ async def create_memory(
     raw_text = req.raw_text
     photo_url: str | None = None
     photo_people: list = []
+    caption: str = ""
 
     # Step 1: 如有照片(data URL) -> 上传至 MinIO
     if req.photo_url:
         decoded = _decode_data_url(req.photo_url)
         if decoded:
-            photo_bytes, filename = decoded
+            photo_bytes, filename, mime = decoded
             try:
-                photo_url = await upload_photo(patient_id, photo_bytes, filename)
-
-                # Step 2: 人脸检测+比对
-                face_embeddings = await detect_faces(photo_bytes)
-                for face_emb in face_embeddings:
-                    matches = await compare_faces(face_emb, patient_id, db)
-                    for match in matches:
-                        if match.get("name"):
-                            photo_people.append(match["name"])
+                photo_url = await upload_photo(
+                    patient_id, photo_bytes, filename, content_type=mime
+                )
             except Exception as e:
-                logger.error("照片处理失败: %s", e)
-                # 照片处理失败不阻断整个流程
+                logger.error("照片上传失败: %s", e)
+                # 上传失败不阻断整个流程
                 photo_url = None
+
+            # Step 2: 人脸检测+比对（失败不影响照片已保存）
+            if photo_bytes:
+                try:
+                    face_embeddings = await detect_faces(photo_bytes)
+                    for face_emb in face_embeddings:
+                        matches = await compare_faces(face_emb, patient_id, db)
+                        for match in matches:
+                            if match.get("name"):
+                                photo_people.append(match["name"])
+                except Exception as e:
+                    logger.error("人脸检测失败: %s", e)
+
+            # Step 2.5: 视觉模型识别图片内容
+            caption = await describe_image(photo_bytes, mime)
         else:
             # 非 data URL（如外链 http），原样保留
             photo_url = req.photo_url
 
-    # Step 3: LLM 实体抽取
-    entities = await extract_entities(raw_text)
+    # Step 3: 决定入库文本：纯图片（无文字/占位符）时使用图片识别描述
+    memory_text = raw_text.strip()
+    if not memory_text or memory_text == "（照片描述）":
+        memory_text = caption or raw_text
+
+    entities = await extract_entities(memory_text)
 
     # 如果人脸识别有结果，合并到 entities
     if photo_people:
         entities["photo_people"] = list(set(entities.get("photo_people", []) + photo_people))
 
     # Step 4: 生成向量嵌入（占位）
-    vector_embedding = await generate_embedding(raw_text)
+    vector_embedding = await generate_embedding(memory_text)
 
     # Step 5: 写入 memories 表
     memory = Memory(
         patient_id=patient_id,
         caregiver_id=req.caregiver_id,
-        raw_text=raw_text,
+        raw_text=memory_text,
         photo_url=photo_url,
         entities=entities,
         vector_embedding=vector_embedding,

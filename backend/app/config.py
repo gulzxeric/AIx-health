@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     LLM_MODEL: str
     LLM_PROVIDER: str
 
+    # 图片识别视觉模型（与主 LLM 分离，托管于 openai-next）
+    LLM_VISION_ENDPOINT: str = "https://api.openai-next.com/v1"
+    LLM_VISION_API_KEY: str = ""
+    LLM_VISION_MODEL: str = "deepseek-v4-flash-vision-exp"
+
     # ASR/TTS
     ASR_ENDPOINT: str
     TTS_ENDPOINT: str

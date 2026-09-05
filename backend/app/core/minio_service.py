@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 from uuid import UUID
 
@@ -8,7 +9,12 @@ from app.core.minio_client import minio_client
 logger = logging.getLogger(__name__)
 
 
-async def upload_photo(patient_id: UUID, file_bytes: bytes, filename: str) -> str:
+async def upload_photo(
+    patient_id: UUID,
+    file_bytes: bytes,
+    filename: str,
+    content_type: str = "image/jpeg",
+) -> str:
     """上传照片到 MinIO，返回 object_url
 
     路径: {patient_id}/{filename}
@@ -17,6 +23,7 @@ async def upload_photo(patient_id: UUID, file_bytes: bytes, filename: str) -> st
         patient_id: 患者 ID
         file_bytes: 文件字节数据
         filename: 文件名（如 "photo.jpg"）
+        content_type: 图片 MIME 类型，如 image/png
 
     Returns:
         MinIO 对象 URL
@@ -28,9 +35,9 @@ async def upload_photo(patient_id: UUID, file_bytes: bytes, filename: str) -> st
         minio_client.put_object,
         bucket,
         object_name,
-        file_bytes,
+        io.BytesIO(file_bytes),
         len(file_bytes),
-        content_type="image/jpeg",
+        content_type=content_type,
     )
 
     object_url = f"/{bucket}/{object_name}"

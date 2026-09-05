@@ -160,3 +160,87 @@ async def generate_embedding(text: str) -> list:
     当前返回虚拟 1536 维向量（全 0）
     """
     return [0.0] * 1536
+
+
+_vision_client = None
+
+
+def _get_vision_client() -> openai.AsyncOpenAI:
+    """懒加载图片识别客户端（独立的 endpoint/key）"""
+    global _vision_client
+    if _vision_client is None:
+        _vision_client = openai.AsyncOpenAI(
+            api_key=settings.LLM_VISION_API_KEY,
+            base_url=settings.LLM_VISION_ENDPOINT,
+            timeout=180,
+        )
+    return _vision_client
+
+
+def _resize_for_vision(
+    photo_bytes: bytes, mime: str, max_side: int = 1280
+) -> tuple[bytes, str]:
+    """发送前压缩/缩放图片，避免超大图片导致视觉模型返回空。
+
+    返回 (bytes, mime)。任何异常都回退为原始字节，不抛出。
+    """
+    try:
+        from io import BytesIO
+
+        from PIL import Image
+
+        img = Image.open(BytesIO(photo_bytes))
+        if img.width > max_side or img.height > max_side:
+            img.thumbnail((max_side, max_side))
+        if img.mode in ("RGBA", "P", "LA"):
+            img = img.convert("RGB")
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        return buf.getvalue(), "image/jpeg"
+    except Exception as e:
+        logger.warning("图片预处理失败，使用原图: %s", e)
+        return photo_bytes, mime
+
+
+async def describe_image(photo_bytes: bytes, mime: str = "image/jpeg") -> str:
+    """用视觉模型生成图片的一句话中文描述。
+
+    未配置 vision key 或调用失败时返回空串，不抛异常。
+
+    Args:
+        photo_bytes: 图片文件字节
+        mime: 图片 MIME 类型，如 image/png
+
+    Returns:
+        图片内容的中文描述；失败为空串
+    """
+    import base64
+
+    if not settings.LLM_VISION_API_KEY:
+        logger.warning("未配置 LLM_VISION_API_KEY，跳过图片描述")
+        return ""
+
+    payload_bytes, payload_mime = _resize_for_vision(photo_bytes, mime)
+    data_url = f"data:{payload_mime};base64,{base64.b64encode(payload_bytes).decode()}"
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "用一句中文描述这张照片里的内容，只输出描述本身，不要加引号。"},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ],
+        }
+    ]
+    try:
+        response = await _get_vision_client().chat.completions.create(
+            model=settings.LLM_VISION_MODEL,
+            messages=messages,
+            max_tokens=300,
+        )
+        content = (response.choices[0].message.content or "").strip()
+        if not content:
+            logger.warning("图片描述返回为空 (model=%s, image_bytes=%d)", settings.LLM_VISION_MODEL, len(photo_bytes))
+        return content
+    except Exception as e:
+        logger.error("图片描述生成失败: %s", e)
+        return ""
