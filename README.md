@@ -114,7 +114,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | PostgreSQL | ✅ | 主数据库 |
 | LLM API | ❌ | 实体抽取+对话，无则降级 |
 | MinIO | ❌ | 照片/语音存储 |
-| ASR/TTS | ❌ | 语音识别/合成，演示用模拟数据 |
+| ASR/TTS | ❌ | 语音服务（可选）：SenseVoice :8200 + GPT-SoVITS :8300，不启动则无语音、文字照常 |
 
 **语音服务（可选，不启动则对话无语音、记忆文字录入仍可用）**：
 

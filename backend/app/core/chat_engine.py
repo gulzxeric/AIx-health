@@ -188,7 +188,7 @@ class ChatEngine:
                 Persona.patient_id == patient_id,
                 Persona.name == info["persona_name"],
             )
-            row = (await db.execute(stmt)).scalar_one_or_none()
+            row = (await db.execute(stmt.limit(1))).scalars().first()
         return info, row
 
     async def generate_reply(
