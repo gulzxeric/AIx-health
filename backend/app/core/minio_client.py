@@ -17,6 +17,9 @@ def create_minio_client() -> Minio:
 minio_client: Minio = create_minio_client()
 
 
+import asyncio
+
+
 async def ensure_buckets() -> None:
     """Ensure all required MinIO buckets exist on startup."""
     buckets = [
@@ -26,8 +29,8 @@ async def ensure_buckets() -> None:
         settings.MINIO_BUCKET_ASSETS,
     ]
     for bucket_name in buckets:
-        if not minio_client.bucket_exists(bucket_name):
-            minio_client.make_bucket(bucket_name)
+        if not await asyncio.to_thread(minio_client.bucket_exists, bucket_name):
+            await asyncio.to_thread(minio_client.make_bucket, bucket_name)
 
 
 @asynccontextmanager

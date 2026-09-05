@@ -41,7 +41,7 @@ class Memory(Base):
         sa.TIMESTAMP(timezone=True), server_default=sa.func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        sa.TIMESTAMP(timezone=True), server_default=sa.func.now()
+        sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now()
     )
 
     __table_args__ = (
