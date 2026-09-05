@@ -8,6 +8,7 @@ class MemoryCreateRequest(BaseModel):
     patient_id: UUID
     raw_text: str
     caregiver_id: UUID
+    photo_url: str | None = None
 
 
 class MemoryResponse(BaseModel):

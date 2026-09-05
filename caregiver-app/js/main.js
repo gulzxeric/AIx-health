@@ -13,7 +13,7 @@
   // ================================================================
   const AppState = {
     currentTab: 'chat',
-    patientId: '550e8400-e29b-41d4-a716-446655440001',
+    patientId: '58b203df-5424-4f53-b155-82b34f840213',
     patientName: '张伯伯',
     isRecording: false,
     recordingTimer: null,

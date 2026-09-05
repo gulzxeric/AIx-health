@@ -1,7 +1,9 @@
+import base64
 import logging
+import uuid
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import cast, select, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,12 +26,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/memories", tags=["记忆管理"])
 
 
+def _decode_data_url(data_url: str) -> tuple[bytes, str] | None:
+    """解析 data URL（如 data:image/png;base64,xxx），返回 (bytes, filename)。非 data URL 返回 None。"""
+    if not data_url.startswith("data:"):
+        return None
+    try:
+        header, payload = data_url.split(",", 1)
+        content_type = header.split(";")[0].split(":", 1)[1] or "image/png"
+        ext = content_type.split("/")[-1].replace("jpeg", "jpg")
+        return base64.b64decode(payload), f"photo-{uuid.uuid4()}.{ext}"
+    except Exception as e:
+        logger.error("data URL 解析失败: %s", e)
+        return None
+
+
 @router.post("", response_model=MemoryResponse)
 async def create_memory(
-    patient_id: UUID = Form(...),
-    raw_text: str = Form(...),
-    caregiver_id: UUID = Form(...),
-    photo: UploadFile = File(None),
+    req: MemoryCreateRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """提交记忆（语音转文本/直接输入/照片）
@@ -42,26 +55,33 @@ async def create_memory(
     5. 写入 memories 表
     6. 返回记忆卡片
     """
+    patient_id = req.patient_id
+    raw_text = req.raw_text
     photo_url: str | None = None
     photo_people: list = []
 
-    # Step 1: 如有照片 -> 上传至 MinIO
-    if photo and photo.filename:
-        try:
-            photo_bytes = await photo.read()
-            photo_url = await upload_photo(patient_id, photo_bytes, photo.filename)
+    # Step 1: 如有照片(data URL) -> 上传至 MinIO
+    if req.photo_url:
+        decoded = _decode_data_url(req.photo_url)
+        if decoded:
+            photo_bytes, filename = decoded
+            try:
+                photo_url = await upload_photo(patient_id, photo_bytes, filename)
 
-            # Step 2: 人脸检测+比对
-            face_embeddings = await detect_faces(photo_bytes)
-            for face_emb in face_embeddings:
-                matches = await compare_faces(face_emb, patient_id, db)
-                for match in matches:
-                    if match.get("name"):
-                        photo_people.append(match["name"])
-        except Exception as e:
-            logger.error("照片处理失败: %s", e)
-            # 照片处理失败不阻断整个流程
-            photo_url = None
+                # Step 2: 人脸检测+比对
+                face_embeddings = await detect_faces(photo_bytes)
+                for face_emb in face_embeddings:
+                    matches = await compare_faces(face_emb, patient_id, db)
+                    for match in matches:
+                        if match.get("name"):
+                            photo_people.append(match["name"])
+            except Exception as e:
+                logger.error("照片处理失败: %s", e)
+                # 照片处理失败不阻断整个流程
+                photo_url = None
+        else:
+            # 非 data URL（如外链 http），原样保留
+            photo_url = req.photo_url
 
     # Step 3: LLM 实体抽取
     entities = await extract_entities(raw_text)
@@ -76,7 +96,7 @@ async def create_memory(
     # Step 5: 写入 memories 表
     memory = Memory(
         patient_id=patient_id,
-        caregiver_id=caregiver_id,
+        caregiver_id=req.caregiver_id,
         raw_text=raw_text,
         photo_url=photo_url,
         entities=entities,

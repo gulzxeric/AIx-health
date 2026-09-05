@@ -8,6 +8,7 @@
 
   const BASE = 'http://127.0.0.1:8000/api/v1';
   const PATIENT_ID = '58b203df-5424-4f53-b155-82b34f840213'; // 测试患者
+  const CAREGIVER_ID = '93890124-ad88-4840-9030-31865000ae2c'; // 测试家属
 
   async function _fetch(path, options) {
     const url = BASE + path;
@@ -59,14 +60,16 @@
   MockAPI.submitMemory = function (data) {
     return _fetch('/memories', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ caregiver_id: CAREGIVER_ID, ...data }),
     }).catch(function () {
       return { id: 'mock-mem-' + Date.now(), entities: { era: '1980s', location: ['广州'] }, confidence: 0.85, sync_status: 'synced' };
     });
   };
 
   MockAPI.getMemories = function (params) {
-    return _fetch('/memories?patient_id=' + PATIENT_ID).catch(function () { return []; });
+    return _fetch('/memories?patient_id=' + PATIENT_ID).then(function (res) {
+      return Array.isArray(res) ? res : (res.memories || []);
+    }).catch(function () { return []; });
   };
 
   MockAPI.deleteMemory = function (id) {
