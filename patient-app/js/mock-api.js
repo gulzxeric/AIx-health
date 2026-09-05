@@ -158,11 +158,7 @@ const MockAPI = (function () {
      * @returns {Promise<Array>} 照片数组 [{ id, url, caption, era }]
      */
     getPhotos: function () {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          resolve(PHOTO_PLACEHOLDERS);
-        }, 200);
-      });
+      return PHOTO_PLACEHOLDERS; // 同步返回，模拟已缓存
     },
 
     /**
