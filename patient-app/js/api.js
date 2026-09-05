@@ -34,7 +34,13 @@
   };
 
   MockAPI.getConfig = function () {
-    return _fetch('/patients/config?patient_id=' + PATIENT_ID).catch(function () {
+    return _fetch('/patients/config?patient_id=' + PATIENT_ID).then(function (data) {
+      // 包装成前端期望的格式 { config, asset_pack }
+      return {
+        config: data,
+        asset_pack: { status: 'ready', photo_urls: [], topic_library: [], prompt_anchors: [] }
+      };
+    }).catch(function () {
       return null;
     });
   };
