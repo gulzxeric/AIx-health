@@ -1133,3 +1133,49 @@ html, body {
     max-height: calc(100vh - 40px);
   }
 }
+
+/* ============================================================
+   照片组合发送面板（photo composer）
+   ============================================================ */
+.photo-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+}
+
+.photo-composer-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.photo-composer-desc {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 18px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+.photo-composer-cancel {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.photo-composer-cancel:active {
+  color: #666;
+}

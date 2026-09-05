@@ -23,6 +23,7 @@
     currentDate: new Date(),
     briefCache: {},
     isBound: true,   // 模拟已绑定
+    pendingPhoto: null,   // 待发送照片 data URL（组合发送用）
     deviceOnline: true,
     statusPollInterval: null
   };
@@ -43,10 +44,16 @@
     DOM.tabBrief = document.getElementById('tabBrief');
     DOM.chatMessages = document.getElementById('chatMessages');
     DOM.chatInput = document.getElementById('chatInput');
+    DOM.chatInputArea = document.getElementById('chatInputArea');
     DOM.btnVoice = document.getElementById('btnVoice');
     DOM.btnPhoto = document.getElementById('btnPhoto');
     DOM.btnSend = document.getElementById('btnSend');
     DOM.photoInput = document.getElementById('photoInput');
+    DOM.photoComposer = document.getElementById('photoComposer');
+    DOM.photoComposerThumb = document.getElementById('photoComposerThumb');
+    DOM.photoComposerDesc = document.getElementById('photoComposerDesc');
+    DOM.photoComposerCancel = document.getElementById('photoComposerCancel');
+    DOM.photoComposerSend = document.getElementById('photoComposerSend');
     DOM.tagFilterBar = document.getElementById('tagFilterBar');
     DOM.memoryList = document.getElementById('memoryList');
     DOM.dateSelector = document.getElementById('dateSelector');
@@ -329,23 +336,36 @@
     }, 50);
   }
 
-  /** 发送文本消息 */
-  function sendTextMessage(text) {
-    if (!text || !text.trim()) return;
+  /** 统一提交记忆入口：文本 / 照片 / 文本+照片 */
+  function submitMemoryEntry(opts) {
+    var text = (opts.text || '').trim();
+    var photoDataUrl = opts.photoDataUrl || null;
 
-    var trimmed = text.trim();
+    if (!text && !photoDataUrl) return;
 
-    // 追加自己的气泡
-    appendMessage({
-      id: generateId(),
-      type: 'text',
-      content: trimmed,
-      side: 'right',
-      time: formatTime(new Date())
-    });
+    // 入库文本：有描述用描述；纯照片用占位符（后端视觉模型自动识别）
+    var rawText = text || '（照片描述）';
 
-    DOM.chatInput.value = '';
-    DOM.btnSend.disabled = true;
+    // 追加自己的气泡（照片气泡 + 可选文字气泡，微信式）
+    if (photoDataUrl) {
+      appendMessage({
+        id: generateId(),
+        type: 'photo',
+        content: '',
+        side: 'right',
+        time: formatTime(new Date()),
+        data: { thumbnail: photoDataUrl }
+      });
+    }
+    if (text) {
+      appendMessage({
+        id: generateId(),
+        type: 'text',
+        content: text,
+        side: 'right',
+        time: formatTime(new Date())
+      });
+    }
 
     // 显示"正在处理..."
     var loadingId = 'loading_' + Date.now();
@@ -357,18 +377,20 @@
       time: ''
     });
 
-    // 模拟后端处理
-    MockAPI.submitMemory({
+    var payload = {
       patient_id: AppState.patientId,
-      raw_text: trimmed
-    }).then(function (result) {
-      // 移除 loading 消息
+      raw_text: rawText
+    };
+    if (photoDataUrl) {
+      payload.photo_url = photoDataUrl;
+    }
+
+    MockAPI.submitMemory(payload).then(function (result) {
       var loadingEl = document.getElementById(loadingId);
       if (loadingEl) {
         loadingEl.remove();
       }
 
-      // 追加记忆卡片
       appendMessage({
         id: generateId(),
         type: 'memory_card',
@@ -380,6 +402,45 @@
 
       showToast('记忆已同步到相框');
     });
+  }
+
+  /** 发送文本消息（纯文字路径，保持原行为） */
+  function sendTextMessage(text) {
+    if (!text || !text.trim()) return;
+
+    DOM.chatInput.value = '';
+    DOM.btnSend.disabled = true;
+
+    submitMemoryEntry({ text: text });
+  }
+
+  /** 打开照片 composer（选图后调用，不立即发送） */
+  function openPhotoComposer(dataUrl) {
+    AppState.pendingPhoto = dataUrl;
+    DOM.photoComposerThumb.src = dataUrl;
+    DOM.photoComposerDesc.value = '';
+    DOM.photoComposer.style.display = 'flex';
+    DOM.chatInputArea.style.display = 'none';
+    DOM.photoComposerDesc.focus();
+  }
+
+  /** 关闭照片 composer，恢复普通输入区 */
+  function closePhotoComposer() {
+    AppState.pendingPhoto = null;
+    DOM.photoComposer.style.display = 'none';
+    DOM.chatInputArea.style.display = 'flex';
+  }
+
+  /** 发送待发照片（带可选描述） */
+  function sendPendingPhoto() {
+    var dataUrl = AppState.pendingPhoto;
+    if (!dataUrl) {
+      closePhotoComposer();
+      return;
+    }
+    var desc = DOM.photoComposerDesc.value;
+    closePhotoComposer();
+    submitMemoryEntry({ text: desc, photoDataUrl: dataUrl });
   }
 
   /** 模拟语音录制 */
@@ -433,39 +494,10 @@
     var file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    // 模拟照片上传
     var reader = new FileReader();
     reader.onload = function (e) {
-      var thumbnailUrl = e.target.result;
-
-      // 追加照片消息
-      appendMessage({
-        id: generateId(),
-        type: 'photo',
-        content: '',
-        side: 'right',
-        time: formatTime(new Date()),
-        data: { thumbnail: thumbnailUrl }
-      });
-
-      showToast('照片上传中...');
-
-      // 模拟后端处理
-      MockAPI.submitMemory({
-        patient_id: AppState.patientId,
-        raw_text: '（照片描述）',
-        photo_url: thumbnailUrl
-      }).then(function (result) {
-        appendMessage({
-          id: generateId(),
-          type: 'memory_card',
-          content: '',
-          side: 'left',
-          time: formatTime(new Date()),
-          data: result
-        });
-        showToast('照片记忆已同步');
-      });
+      // 进入 composer 预览，不立即发送
+      openPhotoComposer(e.target.result);
     };
     reader.readAsDataURL(file);
 
@@ -521,6 +553,16 @@
     // 照片按钮
     DOM.btnPhoto.addEventListener('click', selectPhoto);
     DOM.photoInput.addEventListener('change', handlePhotoSelected);
+
+    // 照片 composer：发送 / 取消 / 回车发送
+    DOM.photoComposerSend.addEventListener('click', sendPendingPhoto);
+    DOM.photoComposerCancel.addEventListener('click', closePhotoComposer);
+    DOM.photoComposerDesc.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendPendingPhoto();
+      }
+    });
 
     // 记忆卡片操作（事件代理）
     DOM.chatMessages.addEventListener('click', function (e) {

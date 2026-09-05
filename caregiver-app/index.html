@@ -46,6 +46,14 @@
               <span class="message-time">系统消息</span>
             </div>
           </div>
+          <!-- 照片组合发送面板（选图后出现，替换普通输入区） -->
+          <div class="photo-composer" id="photoComposer" style="display:none">
+            <img id="photoComposerThumb" class="photo-composer-thumb" alt="待发送照片">
+            <input id="photoComposerDesc" class="photo-composer-desc" type="text"
+                   placeholder="补充这张照片的描述（可留空）" autocomplete="off">
+            <button id="photoComposerCancel" class="photo-composer-cancel" title="移除照片">✕</button>
+            <button id="photoComposerSend" class="chat-send-btn" title="发送">➤</button>
+          </div>
           <!-- 输入区 -->
           <div class="chat-input-area" id="chatInputArea">
             <button class="chat-input-btn" id="btnVoice" title="按住录音">🎤</button>
